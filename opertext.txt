@@ -1,0 +1,313 @@
+import Rx from 'rxjs/Rx';
+
+let secondMessage = "Hope you are doing fine";
+
+let mainObservable =  Rx.Observable.create(function subscribe(Observer){
+    Observer.next("Hello");
+    Observer.next(secondMessage);
+    setTimeout(() => {
+        Observer.next("Hello after 5 seconds");
+        Observer.next(secondMessage);
+    }, 5000);
+});
+
+let chetanObserver = {
+    next: (val) => console.log(`Value recieved for chetanObserver is ${val}`),
+    error: (error) => console.log(error),
+    complete: () => console.log("ChetanObserver Completed")
+};
+
+let rajObserver = {
+    next: (val) => console.log(`Value recieved for RajObserver is ${val}`),
+    error: (val) => console.log(error),
+    complete: () => console.log("RajObserver Complete")
+}
+
+mainObservable.subscribe(chetanObserver);
+secondMessage = "How ya doin?";
+
+setTimeout(() => {
+    secondMessage = "Whats up?";
+}, 6000);
+
+setTimeout(() => {
+    mainObservable.subscribe(rajObserver);
+}, 10000);
+
+import Rx from 'rxjs/Rx';
+
+//Subject
+
+// let mainSubject = new Rx.Subject();          //considers the values emitted only after subscription
+// let mainSubject = new Rx.BehaviorSubject();  //latest value before subscription and the values after subscription
+// let mainSubject = new Rx.ReplaySubject(2);   //n values before subscription and the values after subscription
+let mainSubject = new Rx.AsyncSubject();        //considers the values emitted only after subscription and encounters Complete
+
+let subscriber1 = {
+    currentval: undefined,
+    previousval: undefined
+}
+
+subscriber1.next = function (value) {
+    this.previousval = this.currentval;
+    this.currentval = value;
+
+    console.log(`Subscriber 1 recieved : ${value}`);
+    console.log(`Previous Value : ${this.previousval}`);
+    console.log(`Current Value : ${this.currentval}`);
+}.bind(subscriber1);
+
+let subscriber2 = {  
+    next: (val) => { console.log(`Subscriber 2 recieved : ${val}`) }
+}
+
+mainSubject.next(10);
+mainSubject.next(20);
+mainSubject.next(30);
+mainSubject.next(40);
+mainSubject.subscribe(subscriber1);
+mainSubject.next(50);
+mainSubject.next(60);
+mainSubject.next(70);
+mainSubject.subscribe(subscriber2);
+mainSubject.next(80);
+
+mainSubject.complete();
+
+import {
+    Observable
+} from 'rxjs/Rx';
+
+let numberObs = Observable.create(function subscribe(Observer) {
+    Observer.next(1);
+    Observer.next(2);
+    Observer.next(3);
+    Observer.next(4);
+    Observer.next('a');
+});
+
+function multiplyByN(n) {
+    let parentObs = this;
+    let outputObs = Observable.create(function (outputObserver) {
+        let localObs = {
+            next: (val) => {
+                outputObserver.next(val * n);
+            },
+            error: (error) => console.log(`Error ${error}`),
+            complete: () => console.log("Completed")
+        }
+        parentObs.subscribe(localObs);
+    });
+    return outputObs;
+}
+
+function powerOfN(n) {
+    let sparentObs = this;
+    let soutputObs = Observable.create(function (soutputObserver) {
+        let slocalObs = {
+            next: (val) => {
+                soutputObserver.next(Math.pow(val, n));
+            },
+            error: (error) => console.log(`Error ${error}`),
+            complete: () => console.log("Completed")
+        }
+        sparentObs.subscribe(slocalObs);
+    });
+    return soutputObs;
+}
+
+function natureOfNum() {
+    let nparentObs = this;
+    let numNature = function(val){
+        return (
+            isNaN(val) ? 
+            `${val} & is Not a Number` : ((val % 2 === 0) ? `${val} & is an Even Number` : `${val} & is an Odd Number`)
+        );
+    };
+    let noutputObs = Observable.create(function (noutputObserver) {
+        let nlocalObs = {
+            next: (val) => noutputObserver.next(numNature(val)),
+            error: (error) => console.log(`Error ${error}`),
+            complete: () => console.log("Completed")
+        }
+        nparentObs.subscribe(nlocalObs);
+    });
+    return noutputObs;
+}
+
+Observable.prototype.multiply = multiplyByN;
+Observable.prototype.powerOf = powerOfN;
+Observable.prototype.natureNum = natureOfNum;
+
+let Observer1 = {
+    next: (val) => {
+        console.log(`Observer 1 value is ${val}`);
+    }
+}
+
+numberObs.multiply(6).subscribe(Observer1);
+numberObs.powerOf(3).subscribe(Observer1);
+numberObs.natureNum().subscribe(Observer1);
+
+import { Observable, Subject } from 'rxjs/Rx';
+
+//Of Operator
+// --> Creation Operator
+// --> this is like a bulk next 
+// --> this first emits (immediate) & then executes the complete
+// --> uses null scheduler by default i.e. next notifications are sent synchronously
+
+(function() {
+    let numberObs = Observable.of(1,2,3,4,5,6,7);
+    let letterObs = Observable.of('a', 'b', 'c');
+    let intervalObs = Observable.interval(1000);
+
+    let resultObs = numberObs.concat(letterObs).concat(intervalObs);
+
+
+    let numObserver = {
+        next: (val) => console.log(val),
+        error: (error) => console.log(error),
+        complete: () => console.log("Completed")
+    }
+
+    numberObs.concat(letterObs).subscribe(numObserver);
+    // resultObs.subscribe(numObserver); //this does not execute complete
+});
+
+//from Operator
+// --> Creation Operator
+// --> Creates observable from anything
+// --> executes complete after the emits are complete
+
+(function(){
+    let prodList = [
+        {name: {shortname: "tie", desc: "a tie"}, price: 121},
+        {name: {shortname: "shoe", desc: "a shoe"}, price: 122},
+        {name: {shortname: "shirt", desc: "a shirt"}, price: 221},
+        {name: {shortname: "pant", desc: "a pant"}, price: 222},
+    ];
+   
+    let prodObs = Observable.from(prodList);
+
+    prodObs.subscribe({
+        next: (val) => console.log(val),
+        error: (error) => console.log(error),
+        complete: () => console.log("Completed")
+    });
+
+});
+
+//pluck Operator
+// --> picks one of the nested properties of every emitted object
+// --> transformation operator
+
+(function(){
+    let prodList = [
+        {name: {shortname: "tie", desc: "a tie"}, price: 121},
+        {name: {shortname: "shoe", desc: "a shoe"}, price: 122},
+        {name: {shortname: "shirt", desc: "a shirt"}, price: 221},
+        {name: {shortname: "pant", desc: "a pant"}, price: 222},
+    ];
+
+    // let prodObs = Observable.from(prodList).pluck("name", "desc"); //nested form to pluck
+    let prodObs = Observable.from(prodList).pluck("price");
+
+    prodObs.subscribe({
+        next: (val) => console.log(val),
+        error: (error) => console.log(error),
+        complete: () => console.log("Completed")
+    });
+
+});
+
+//filter Operator
+// --> Filtering Operator
+// --> Only emits the value if filter condition satisfies
+// --> predicate function is used to filter
+
+(function(){
+    let prodList = [
+        {name: {shortname: "tie", desc: "a tie"}, price: 121},
+        {name: {shortname: "shoe", desc: "a shoe"}, price: 122},
+        {name: {shortname: "shirt", desc: "a shirt"}, price: 221},
+        {name: {shortname: "pant", desc: "a pant"}, price: 222},
+    ];
+
+    let prodObs = Observable.from(prodList).pluck("price");
+
+    prodObs.filter((val) => {
+        return val>200 ? true : false;
+    }).subscribe({
+        next: (val) => console.log(val),
+        error: (error) => console.log(error),
+        complete: () => console.log("Completed")
+    });
+
+});
+
+//fromEvent Operator
+// --> Creation Operator
+// --> creates observable from DOM events/ Node.js events etc..
+// --> first argument is event target, second argument is a string which indicates type of event we are listening to
+
+(function(){
+    let clickObs = Observable.fromEvent(document, "click");
+    clickObs.subscribe({
+        next: (x) => console.log(`you click on the co-ordinates ${x.clientX} , ${x.clientY}`),
+        error: (error) => console.log(error),
+        complete: () => console.log("Completed")
+    });
+});
+
+//zip Operator
+// --> combines multiple Observables into one Observable
+// --> Combination Operator
+
+(function (){
+    let nameObs = Observable.of('Batman', 'Iron Man', 'Thanos');
+    let ageObs = Observable.of('40', '35' , 'Unknown');
+    let isPowerful = Observable.of(true, true, true);
+
+    let profileObs = Observable
+                        .zip(nameObs, 
+                            ageObs, 
+                            isPowerful, 
+                            (Name, Age, isPowerful) => ({ Name, Age, isPowerful }))
+                        .subscribe(x => console.log(x));  
+                        
+    let clickObs = Observable.fromEvent(document, "click");
+    let xCor = clickObs.pluck('clientX');
+    let yCor = clickObs.pluck('clientY');
+
+    xCor.zip(yCor, function(x,y){
+        return {xCordinate: x, yCordinate: y};
+    }).subscribe({
+        next: (val) => console.log(`You clicked on the co-ordinates ${val.xCordinate} , ${val.yCordinate}`),
+        error: (error) => console.log(error),
+        complete: () => console.log("Completed")
+    });
+
+});
+
+//map Operator
+// --> Transformation Operator
+// --> passes each source values through a transformation function to get corresponding output values i.e. Observable
+
+(function() {
+    let clickObs = Observable.fromEvent(document, "click");
+    let xCor = clickObs.pluck('clientX');
+    let yCor = clickObs.pluck('clientY');
+
+    xCor.zip(yCor, function(x,y){
+        return {xCordinate: x, yCordinate: y};
+    }).map((val) => {
+        //return ({ xCor: val.xCordinate, yCor: val.yCordinate });
+        return `You clicked on the co-ordinates ${val.xCordinate} , ${val.yCordinate}`;   
+    }).subscribe(x => console.log(x));
+
+    let positionObs = clickObs.map(x => x.clientX);
+
+    positionObs.subscribe(x => console.log(`PositionX : ${x}`));
+
+}());
