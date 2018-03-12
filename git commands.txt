@@ -1,0 +1,7 @@
+git init
+$ touch .gitignore && echo "node_modules/" >> .gitignore
+git add .
+git config --global user.email "csindhe@gmail.com"
+git commit -m "<whatever>"
+git remote add origin <url>
+git push origin master --force      --> only if new repository
