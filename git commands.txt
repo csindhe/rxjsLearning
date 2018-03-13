@@ -1,3 +1,4 @@
+-----Follow this commands --
 git init
 $ touch .gitignore && echo "node_modules/" >> .gitignore
 git add .
